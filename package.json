@@ -1,20 +1,21 @@
 {
   "name": "@oceancommon/xbuild",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "commonjs",
   "description": "",
   "main": "index.js",
   "files": [
-    "src",
     "bin",
     "dist"
   ],
   "scripts": {
+    "version": "node ./scripts/version.js -p",
     "self-build": "node --loader ts-node --no-warnings scripts/build-self.ts",
     "dev": "xbuild --dev dev",
     "build": "xbuild build",
     "compile": "xbuild compile",
-    "check": "xbuild check"
+    "check": "xbuild check",
+    "release": "pnpm run version && pnpm publish"
   },
   "bin": {
     "xbuild": "./bin/xbuild.js"
@@ -22,7 +23,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": ["xbuild"],
+  "keywords": [
+    "xbuild"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -36,6 +39,7 @@
     "@types/typescript": "^2.0.0",
     "@types/ws": "^8.18.1",
     "fs-extra": "^11.3.0",
+    "semver": "^7.7.2",
     "ts-node": "^10.9.2"
   },
   "dependencies": {
