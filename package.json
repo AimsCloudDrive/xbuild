@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "description": "High-performance build tool powered by Rolldown",
-  "main": "./dist/index.js",
+  "main": "./dist/cli.js",
   "bin": {
     "xbuild": "./bin/xbuild.js"
   },
   "scripts": {
-    "build:self": "node --experimental-strip-types -r tsx ./scripts/build-self.ts",
-    "dev": "xbuild --dev dev",
-    "build": "xbuild build",
-    "check": "xbuild check",
-    "compile": "xbuild compile",
-    "prepublishOnly": "pnpm run build"
+    "build:cli": "vite build && cp dist/xbuild.js bin/xbuild.js && chmod +x bin/xbuild.js",
+    "dev": "tsx src/cli.ts dev",
+    "build": "tsx src/cli.ts build",
+    "check": "tsx src/cli.ts check",
+    "compile": "tsx src/cli.ts compile"
   },
   "files": [
     "dist",
@@ -28,13 +27,13 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "^5.4.1",
-    "commander": "^12.1.0",
     "rolldown": "^1.0.0",
     "typescript": "^5.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.18",
-    "tsx": "^4.19.0"
+    "tsx": "^4.19.0",
+    "vite": "^8.0.11"
   },
   "engines": {
     "node": ">=18.0.0"

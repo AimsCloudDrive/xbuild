@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { program } from "commander";
 import chalk from "chalk";
 import path from "path";
 import fs from "fs";
@@ -44,12 +43,12 @@ class TypeScriptCompiler {
       process.cwd()
     );
 
-    const program = ts.createProgram({
+    const prog = ts.createProgram({
       rootNames: parsedConfig.fileNames,
       options: parsedConfig.options,
     });
 
-    const diagnostics = ts.getPreEmitDiagnostics(program);
+    const diagnostics = ts.getPreEmitDiagnostics(prog);
 
     if (diagnostics.length > 0) {
       const formatHost = {
@@ -201,18 +200,72 @@ function getDefaultConfig() {
   };
 }
 
-program
-  .name("xbuild")
-  .description("High-performance build tool powered by Rolldown")
-  .version("1.0.0");
+function parseArgs(args) {
+  const result = { options: {}, command: null, positional: [] };
 
-program
-  .command("check")
-  .description("Run TypeScript type checking")
-  .option("-c, --config <path>", "Path to config file")
-  .action(async (options) => {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === "-c" || arg === "--config") {
+      result.options.config = args[++i];
+    } else if (arg === "-p" || arg === "--port") {
+      result.options.port = args[++i];
+    } else if (arg === "-V" || arg === "--version") {
+      result.command = "version";
+    } else if (arg === "-h" || arg === "--help") {
+      result.command = "help";
+    } else if (!arg.startsWith("-")) {
+      result.command = arg;
+    }
+  }
+
+  return result;
+}
+
+function showHelp() {
+  console.log(`
+${chalk.bold("xbuild")} - High-performance build tool powered by Rolldown
+
+${chalk.bold("Usage:")}
+  xbuild [command] [options]
+
+${chalk.bold("Commands:")}
+  check       Run TypeScript type checking
+  dev         Start development server with watch mode
+  compile     Compile TypeScript to JavaScript
+  build       Full build process with type checking and bundling
+
+${chalk.bold("Options:")}
+  -V, --version       Output the version number
+  -h, --help          Display help information
+  -c, --config <path> Path to config file
+  -p, --port <number> Port number (default: 3000)
+`);
+}
+
+const args = process.argv.slice(2);
+const parsed = parseArgs(args);
+
+if (parsed.command === "version" || parsed.command === "-V") {
+  console.log("1.0.0");
+  process.exit(0);
+}
+
+if (parsed.command === "help" || parsed.command === "-h" || !parsed.command) {
+  if (!parsed.command) {
+    showHelp();
+  } else {
+    showHelp();
+  }
+  process.exit(0);
+}
+
+async function main() {
+  const command = parsed.command;
+
+  if (command === "check") {
     try {
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(parsed.options.config);
       logger.info("Starting type checking...");
 
       const compiler = new TypeScriptCompiler();
@@ -229,32 +282,19 @@ program
       logger.error("Error during type checking:", error);
       process.exit(1);
     }
-  });
-
-program
-  .command("dev")
-  .description("Start development server with watch mode")
-  .option("-c, --config <path>", "Path to config file")
-  .option("-p, --port <number>", "Port number", "3000")
-  .action(async (options) => {
+  } else if (command === "dev") {
     try {
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(parsed.options.config);
       const builder = new Builder(config);
       await builder.watch();
-      logger.success(`Development server running at http://localhost:${options.port}`);
+      logger.success(`Development server running at http://localhost:${parsed.options.port || 3000}`);
     } catch (error) {
       logger.error("Error starting development server:", error);
       process.exit(1);
     }
-  });
-
-program
-  .command("compile")
-  .description("Compile TypeScript to JavaScript")
-  .option("-c, --config <path>", "Path to config file")
-  .action(async (options) => {
+  } else if (command === "compile") {
     try {
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(parsed.options.config);
       logger.info("Starting compilation...");
 
       const build = await rolldown({
@@ -279,15 +319,9 @@ program
       logger.error("Error during compilation:", error);
       process.exit(1);
     }
-  });
-
-program
-  .command("build")
-  .description("Full build process with type checking and bundling")
-  .option("-c, --config <path>", "Path to config file")
-  .action(async (options) => {
+  } else if (command === "build") {
     try {
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(parsed.options.config);
       logger.info("Starting build process...");
 
       const builder = new Builder(config);
@@ -304,6 +338,11 @@ program
       logger.error("Error during build:", error);
       process.exit(1);
     }
-  });
+  } else {
+    console.error(`${chalk.red("Unknown command:")} ${command}`);
+    showHelp();
+    process.exit(1);
+  }
+}
 
-program.parse();
+main();
