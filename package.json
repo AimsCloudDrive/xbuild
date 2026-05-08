@@ -8,7 +8,7 @@
     "xbuild": "./bin/xbuild.js"
   },
   "scripts": {
-    "build:cli": "vite build && cp dist/xbuild.js bin/xbuild.js && chmod +x bin/xbuild.js",
+    "build:cli": "rolldown -c rolldown.config.mjs && cp dist/cli.js bin/xbuild.js && chmod +x bin/xbuild.js",
     "dev": "tsx src/cli.ts dev",
     "build": "tsx src/cli.ts build",
     "check": "tsx src/cli.ts check",
@@ -26,14 +26,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chalk": "^5.4.1",
     "rolldown": "^1.0.0",
     "typescript": "^5.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.18",
-    "tsx": "^4.19.0",
-    "vite": "^8.0.11"
+    "tsx": "^4.19.0"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import chalk from "chalk";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -10,15 +9,24 @@ import * as ts from "typescript";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const colors = {
+  blue: (s) => `\x1b[34m${s}\x1b[0m`,
+  yellow: (s) => `\x1b[33m${s}\x1b[0m`,
+  red: (s) => `\x1b[31m${s}\x1b[0m`,
+  green: (s) => `\x1b[32m${s}\x1b[0m`,
+  gray: (s) => `\x1b[90m${s}\x1b[0m`,
+  bold: (s) => `\x1b[1m${s}\x1b[0m`,
+};
+
 const logger = {
   info: (message, ...args) =>
-    console.log(`${chalk.blue("[INFO]")} ${chalk.gray(message)}`, ...args),
+    console.log(`${colors.blue("[INFO]")} ${colors.gray(message)}`, ...args),
   warn: (message, ...args) =>
-    console.log(`${chalk.yellow("[WARN]")} ${chalk.yellow(message)}`, ...args),
+    console.log(`${colors.yellow("[WARN]")} ${colors.yellow(message)}`, ...args),
   error: (message, ...args) =>
-    console.log(`${chalk.red("[ERROR]")} ${chalk.red(message)}`, ...args),
+    console.log(`${colors.red("[ERROR]")} ${colors.red(message)}`, ...args),
   success: (message, ...args) =>
-    console.log(`${chalk.green("[SUCCESS]")} ${chalk.green(message)}`, ...args),
+    console.log(`${colors.green("[SUCCESS]")} ${colors.green(message)}`, ...args),
 };
 
 class TypeScriptCompiler {
@@ -224,18 +232,18 @@ function parseArgs(args) {
 
 function showHelp() {
   console.log(`
-${chalk.bold("xbuild")} - High-performance build tool powered by Rolldown
+${colors.bold("xbuild")} - High-performance build tool powered by Rolldown
 
-${chalk.bold("Usage:")}
+${colors.bold("Usage:")}
   xbuild [command] [options]
 
-${chalk.bold("Commands:")}
+${colors.bold("Commands:")}
   check       Run TypeScript type checking
   dev         Start development server with watch mode
   compile     Compile TypeScript to JavaScript
   build       Full build process with type checking and bundling
 
-${chalk.bold("Options:")}
+${colors.bold("Options:")}
   -V, --version       Output the version number
   -h, --help          Display help information
   -c, --config <path> Path to config file
@@ -252,11 +260,7 @@ if (parsed.command === "version" || parsed.command === "-V") {
 }
 
 if (parsed.command === "help" || parsed.command === "-h" || !parsed.command) {
-  if (!parsed.command) {
-    showHelp();
-  } else {
-    showHelp();
-  }
+  showHelp();
   process.exit(0);
 }
 
@@ -339,7 +343,7 @@ async function main() {
       process.exit(1);
     }
   } else {
-    console.error(`${chalk.red("Unknown command:")} ${command}`);
+    console.error(`${colors.red("Unknown command:")} ${command}`);
     showHelp();
     process.exit(1);
   }
