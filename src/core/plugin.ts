@@ -1,33 +1,22 @@
-import { Plugin as RollupPlugin } from "rollup";
-import { XBuildPluginHooks } from "./types";
+import type { RolldownPlugin } from "rolldown";
+import type { XBuildPlugin } from "./types.js";
 
-export interface XBuildPlugin {
-  name: string;
-  hooks?: XBuildPluginHooks;
-  rollupPlugin?: () => RollupPlugin;
-  devServer?: () => any;
-}
+export class PluginManager {
+  private plugins: XBuildPlugin[];
 
-class PluginManager {
-  private declare plugins: XBuildPlugin[];
-
-  constructor(plugins: XBuildPlugin[] | PluginManager) {
-    if (plugins instanceof PluginManager) {
-      return plugins;
-    } else {
-      this.plugins = plugins;
-    }
+  constructor(plugins: XBuildPlugin[]) {
+    this.plugins = plugins || [];
   }
 
-  async applyHook<K extends keyof XBuildPluginHooks>(
+  async applyHook<K extends "beforeBuild" | "afterBuild" | "beforeCheck" | "afterCheck" | "beforeWatch" | "afterWatch">(
     hookName: K,
-    ...args: Parameters<NonNullable<XBuildPluginHooks[K]>>
+    ...args: K extends "afterBuild" ? [boolean, unknown?] : [boolean]
   ): Promise<void> {
     for (const plugin of this.plugins) {
       const hook = plugin.hooks?.[hookName];
       if (typeof hook === "function") {
         try {
-          await (hook as any)(...args);
+          await (hook as (arg: unknown) => Promise<void>)(args[0]);
         } catch (error) {
           console.error(
             `Plugin ${plugin.name} hook ${hookName} failed:`,
@@ -38,15 +27,13 @@ class PluginManager {
     }
   }
 
-  getRollupPlugins(): RollupPlugin[] {
+  getRolldownPlugins(): RolldownPlugin[] {
     return this.plugins
-      .map((p) => p.rollupPlugin?.())
-      .filter(Boolean) as RollupPlugin[];
+      .map((p) => p.rolldownPlugin?.())
+      .filter((p): p is RolldownPlugin => p !== undefined);
   }
 
-  getDevPlugins(): any[] {
-    return this.plugins.map((p) => p.devServer?.()).filter(Boolean) as any[];
+  getPluginNames(): string[] {
+    return this.plugins.map((p) => p.name);
   }
 }
-
-export { PluginManager };

@@ -1,58 +1,58 @@
-// src/core/types.ts
-import { RollupOptions, OutputOptions, Plugin as RollupPlugin } from "rollup";
-import { PluginManager } from "./plugin";
+import type { RolldownPlugin } from "rolldown";
 
 export type XBuildMode = "development" | "production";
 
 export interface XBuildPluginHooks {
+  name: string;
   beforeBuild?: () => Promise<void>;
-  afterBuild?: (success: boolean, error?: Error | unknown) => Promise<void>;
+  afterBuild?: (success: boolean, error?: unknown) => Promise<void>;
   beforeCheck?: () => Promise<void>;
   afterCheck?: (success: boolean) => Promise<void>;
-  beforeDeclaration?: () => Promise<void>;
-  afterDeclaration?: (success: boolean) => Promise<void>;
-  beforeCompile?: () => Promise<void>;
-  afterCompile?: (success: boolean) => Promise<void>;
+  beforeWatch?: () => Promise<void>;
+  afterWatch?: () => Promise<void>;
 }
 
 export interface XBuildPlugin {
   name: string;
   hooks?: XBuildPluginHooks;
-  rollupPlugin?: () => RollupPlugin;
-  devServer?: () => any;
+  rolldownPlugin?: () => RolldownPlugin;
 }
 
-export interface XBuildOutputOptions extends OutputOptions {
+export interface XBuildOutputOptions {
   dir?: string;
   file?: string;
+  format?: "esm" | "cjs" | "iife";
+  sourcemap?: boolean | "inline" | "hidden";
+  name?: string;
+  globals?: Record<string, string>;
+  banner?: string | Function;
+  footer?: string | Function;
+  entryFileNames?: string;
+  chunkFileNames?: string;
+  assetFileNames?: string;
 }
-interface BaseXbuildConfig {
-  input: string | string[] | { [entryName: string]: string };
+
+export interface XBuildConfig {
+  input: string | string[] | Record<string, string>;
   output?: XBuildOutputOptions | XBuildOutputOptions[];
   mode?: XBuildMode;
   tsconfig?: string;
-  rollupOptions?: RollupOptions;
   watch?: boolean;
-  serve?: boolean;
-  port?: number;
-}
-
-export interface XBuildConfig extends BaseXbuildConfig {
+  external?: string[] | RegExp | Function;
   plugins?: XBuildPlugin[];
-}
-export interface LoadedXbuildConfig extends BaseXbuildConfig {
-  plugins: PluginManager;
 }
 
 export interface XBuildContext {
   config: XBuildConfig;
-  plugins: PluginManager;
+  plugins: XBuildPlugin[];
   mode: XBuildMode;
 }
 
 export type UserConfig =
   | Partial<XBuildConfig>
-  | ((env: { mode: XBuildMode }) => Partial<XBuildConfig>);
+  | ((
+      env: { mode: XBuildMode }
+    ) => Partial<XBuildConfig>);
 
 export function defineConfig(config: UserConfig): UserConfig {
   return config;

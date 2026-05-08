@@ -1,74 +1,30 @@
-// src/commands/compile.ts
-import { RollupOptions } from "rollup";
-import { XBuilder } from "../core/builder";
-import { LoadedXbuildConfig } from "../core/types";
+import { rolldown } from "rolldown";
 import { loadConfig } from "../utils/config";
-import { Logger } from "../utils/logger";
+import { logger } from "../utils/logger";
 
 export async function compileCommand(options: { config?: string }) {
-  const logger = new Logger("Compile");
   try {
-    let config = await loadConfig(options.config);
+    const config = await loadConfig(options.config);
+    logger.info("Starting compilation...");
 
-    // 编译模式配置
-    config = {
-      ...config,
-      mode: "production",
-      watch: false,
-      serve: false,
-      tsconfig: config.tsconfig || "tsconfig.json",
-    } as LoadedXbuildConfig;
+    const outputOptions = config.output || { dir: "dist" };
 
-    logger.info("Starting compilation (without declaration files)...");
-
-    await config.plugins.applyHook("beforeCompile");
-
-    const builder = new XBuilder(config);
-
-    // Rollup 配置 - 编译但不生成声明文件
-    const rollupOptions: RollupOptions = {
+    const build = await rolldown({
       input: config.input,
-      output: config.output || {
-        dir: "dist",
-        format: "esm",
-      },
-      plugins: [
-        ...[config.rollupOptions?.plugins].flat(),
-        {
-          name: "ts-compile-only",
-          async transform(code, id) {
-            if (id.endsWith(".ts") || id.endsWith(".tsx")) {
-              // @ts-ignore
-              const ts = await import("typescript");
-              return ts.transpileModule(code, {
-                compilerOptions: {
-                  target: ts.ScriptTarget.ESNext,
-                  module: ts.ModuleKind.ESNext,
-                  jsx: ts.JsxEmit.React,
-                  esModuleInterop: true,
-                },
-              }).outputText;
-            }
-          },
-        },
-      ],
-      ...(config.rollupOptions || {}),
-    };
+      external: config.external,
+      plugins: [],
+    });
 
-    const success = await builder.runBuild(
-      rollupOptions,
-      rollupOptions.output!
-    );
+    await build.write({
+      dir: (outputOptions as { dir?: string }).dir || "dist",
+      format: (outputOptions as { format?: string }).format || "esm",
+      sourcemap: false,
+    });
 
-    await config.plugins.applyHook("afterCompile", success);
+    await build.close();
 
-    if (success) {
-      logger.success("Compilation completed successfully");
-      process.exit(0);
-    } else {
-      logger.error("Compilation failed");
-      process.exit(1);
-    }
+    logger.success("Compilation completed successfully");
+    process.exit(0);
   } catch (error) {
     logger.error("Error during compilation:", error);
     process.exit(1);

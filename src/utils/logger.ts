@@ -1,4 +1,3 @@
-// src/utils/logger.ts
 import chalk from "chalk";
 
 type LogLevel = "info" | "warn" | "error" | "success";
@@ -10,53 +9,59 @@ export class Logger {
     this.prefix = prefix;
   }
 
-  private log(level: LogLevel, message: string, ...args: any[]) {
+  private log(level: LogLevel, message: string, ...args: unknown[]) {
     const timestamp = new Date().toLocaleTimeString();
-    let prefix = `[${timestamp}] ${this.prefix}:`;
+    const prefixStr = `[${timestamp}] ${this.prefix}:`;
+
+    let styledPrefix: string;
+    let styledMessage: string;
 
     switch (level) {
       case "info":
-        prefix = chalk.blue(prefix);
-        message = chalk.gray(message);
+        styledPrefix = chalk.blue(prefixStr);
+        styledMessage = chalk.gray(message);
         break;
       case "warn":
-        prefix = chalk.yellow(prefix);
-        message = chalk.yellow(message);
+        styledPrefix = chalk.yellow(prefixStr);
+        styledMessage = chalk.yellow(message);
         break;
       case "error":
-        prefix = chalk.red(prefix);
-        message = chalk.red(message);
+        styledPrefix = chalk.red(prefixStr);
+        styledMessage = chalk.red(message);
         break;
       case "success":
-        prefix = chalk.green(prefix);
-        message = chalk.green(message);
+        styledPrefix = chalk.green(prefixStr);
+        styledMessage = chalk.green(message);
         break;
     }
 
-    console.log(`${prefix} ${message}`, ...args);
+    console.log(`${styledPrefix} ${styledMessage}`, ...args);
   }
 
-  info(message: string, ...args: any[]) {
+  info(message: string, ...args: unknown[]) {
     this.log("info", message, ...args);
   }
 
-  warn(message: string, ...args: any[]) {
+  warn(message: string, ...args: unknown[]) {
     this.log("warn", message, ...args);
   }
 
-  error(message: string, ...args: any[]) {
+  error(message: string, ...args: unknown[]) {
     this.log("error", message, ...args);
   }
 
-  success(message: string, ...args: any[]) {
+  success(message: string, ...args: unknown[]) {
     this.log("success", message, ...args);
   }
-
-  progress(message: string, current: number, total: number) {
-    const percent = Math.round((current / total) * 100);
-    const progressBar = `[${"=".repeat(percent / 5)}${" ".repeat(
-      20 - percent / 5
-    )}]`;
-    this.info(`${message} ${progressBar} ${percent}% (${current}/${total})`);
-  }
 }
+
+export const logger = {
+  info: (message: string, ...args: unknown[]) =>
+    console.log(`${chalk.blue("[INFO]")} ${chalk.gray(message)}`, ...args),
+  warn: (message: string, ...args: unknown[]) =>
+    console.log(`${chalk.yellow("[WARN]")} ${chalk.yellow(message)}`, ...args),
+  error: (message: string, ...args: unknown[]) =>
+    console.log(`${chalk.red("[ERROR]")} ${chalk.red(message)}`, ...args),
+  success: (message: string, ...args: unknown[]) =>
+    console.log(`${chalk.green("[SUCCESS]")} ${chalk.green(message)}`, ...args),
+};

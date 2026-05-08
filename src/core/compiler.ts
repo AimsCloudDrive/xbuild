@@ -1,23 +1,31 @@
-// @ts-nocheck
-import ts from "typescript";
-import { Logger } from "../utils/logger";
-import { LoadedXbuildConfig } from "./types";
+import * as ts from "typescript";
+import { logger } from "../utils/logger.js";
 
 export class TypeScriptCompiler {
-  private config: LoadedXbuildConfig;
-  private logger: Logger = new Logger("TypeScript");
-
-  constructor(config: LoadedXbuildConfig) {
-    this.config = config;
-  }
-
   async checkTypes(): Promise<boolean> {
-    this.logger.info("Running TypeScript type check...");
+    logger.info("Running TypeScript type check...");
 
-    const tsConfig = this.getTsConfig();
+    const configPath = ts.findConfigFile(
+      process.cwd(),
+      ts.sys.fileExists,
+      "tsconfig.json"
+    );
+
+    if (!configPath) {
+      logger.warn("No tsconfig.json found, skipping type check");
+      return true;
+    }
+
+    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+    const parsedConfig = ts.parseJsonConfigFileContent(
+      configFile.config,
+      ts.sys,
+      process.cwd()
+    );
+
     const program = ts.createProgram({
-      rootNames: tsConfig.fileNames,
-      options: tsConfig.options,
+      rootNames: parsedConfig.fileNames,
+      options: parsedConfig.options,
     });
 
     const diagnostics = ts.getPreEmitDiagnostics(program);
@@ -30,25 +38,43 @@ export class TypeScriptCompiler {
       };
 
       const message = ts.formatDiagnostics(diagnostics, formatHost);
-      this.logger.error("TypeScript type check failed:\n" + message);
+      logger.error("TypeScript type check failed:\n" + message);
       return false;
     }
 
-    this.logger.success("TypeScript type check passed");
+    logger.success("TypeScript type check passed");
     return true;
   }
 
   async emitDeclarations(): Promise<boolean> {
-    this.logger.info("Generating type declarations...");
+    logger.info("Generating type declarations...");
 
-    const tsConfig = this.getTsConfig();
+    const configPath = ts.findConfigFile(
+      process.cwd(),
+      ts.sys.fileExists,
+      "tsconfig.json"
+    );
+
+    if (!configPath) {
+      logger.warn("No tsconfig.json found, skipping declaration emit");
+      return true;
+    }
+
+    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+    const parsedConfig = ts.parseJsonConfigFileContent(
+      configFile.config,
+      ts.sys,
+      process.cwd()
+    );
+
     const program = ts.createProgram({
-      rootNames: tsConfig.fileNames,
+      rootNames: parsedConfig.fileNames,
       options: {
-        ...tsConfig.options,
+        ...parsedConfig.options,
         declaration: true,
         emitDeclarationOnly: true,
         noEmit: false,
+        outDir: parsedConfig.options.outDir || "dist",
       },
     });
 
@@ -65,30 +91,11 @@ export class TypeScriptCompiler {
       };
 
       const message = ts.formatDiagnostics(diagnostics, formatHost);
-      this.logger.error("Declaration generation failed:\n" + message);
+      logger.error("Declaration generation failed:\n" + message);
       return false;
     }
 
-    this.logger.success("Type declarations generated");
+    logger.success("Type declarations generated");
     return true;
-  }
-
-  private getTsConfig(): ts.ParsedCommandLine {
-    const configPath = ts.findConfigFile(
-      process.cwd(),
-      ts.sys.fileExists,
-      this.config.tsconfig || "tsconfig.json"
-    );
-
-    if (!configPath) {
-      throw new Error("tsconfig.json not found");
-    }
-
-    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-    return ts.parseJsonConfigFileContent(
-      configFile.config,
-      ts.sys,
-      process.cwd()
-    );
   }
 }

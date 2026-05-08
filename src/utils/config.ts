@@ -1,15 +1,15 @@
-// src/utils/config.ts
 import path from "path";
 import fs from "fs";
-import { XBuildConfig, XBuildPlugin, defineConfig } from "../core/types";
-import { PluginManager } from "../core/plugin";
-import { Logger } from "./logger";
+import { fileURLToPath } from "url";
+import type { XBuildConfig } from "../core/types.js";
+import { logger } from "./logger.js";
 
-const logger = new Logger("Config");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function loadConfig(
   userConfigPath?: string
-): Promise<Omit<XBuildConfig, "plugins"> & { plugins: PluginManager }> {
+): Promise<XBuildConfig> {
   const configPath = findConfigFile(userConfigPath);
 
   if (!configPath) {
@@ -20,11 +20,9 @@ export async function loadConfig(
   try {
     logger.info(`Loading configuration from ${configPath}`);
 
-    // 动态导入配置文件
     const userConfigModule = await import(configPath);
     const userConfig = userConfigModule.default || userConfigModule;
 
-    // 处理函数式配置
     const resolvedConfig =
       typeof userConfig === "function"
         ? userConfig({
@@ -34,18 +32,12 @@ export async function loadConfig(
           })
         : userConfig;
 
-    // 应用 defineConfig 处理
-    const finalConfig = defineConfig(resolvedConfig) as XBuildConfig;
+    const finalConfig = resolvedConfig as XBuildConfig;
 
-    // 确保插件管理器初始化
-    const pluginManager = new PluginManager(finalConfig.plugins || []);
-
-    // 设置默认值
     return {
       mode: "production",
       tsconfig: "tsconfig.json",
       ...finalConfig,
-      plugins: pluginManager,
     };
   } catch (error) {
     logger.error(`Failed to load config file: ${configPath}`, error);
@@ -59,7 +51,6 @@ function findConfigFile(userPath?: string): string | null {
     "xbuild.config.ts",
     "xbuild.config.js",
     "xbuild.config.mjs",
-    "xbuild.config.cjs",
     "build.config.ts",
     path.join("config", "xbuild.config.ts"),
   ].filter(Boolean) as string[];
@@ -70,17 +61,14 @@ function findConfigFile(userPath?: string): string | null {
       return absolutePath;
     }
 
-    // 尝试添加扩展名
-    const withTsExt = absolutePath.endsWith(".ts")
-      ? absolutePath
-      : `${absolutePath}.ts`;
+    const withTsExt =
+      absolutePath.endsWith(".ts") ? absolutePath : `${absolutePath}.ts`;
     if (fs.existsSync(withTsExt)) {
       return withTsExt;
     }
 
-    const withJsExt = absolutePath.endsWith(".js")
-      ? absolutePath
-      : `${absolutePath}.js`;
+    const withJsExt =
+      absolutePath.endsWith(".js") ? absolutePath : `${absolutePath}.js`;
     if (fs.existsSync(withJsExt)) {
       return withJsExt;
     }
@@ -89,16 +77,13 @@ function findConfigFile(userPath?: string): string | null {
   return null;
 }
 
-function getDefaultConfig(): Omit<XBuildConfig, "plugins"> & {
-  plugins: PluginManager;
-} {
+function getDefaultConfig(): XBuildConfig {
   return {
     input: "src/index.ts",
     output: {
       dir: "dist",
-      format: "esm",
     },
     tsconfig: "tsconfig.json",
-    plugins: new PluginManager([]),
+    plugins: [],
   };
 }
