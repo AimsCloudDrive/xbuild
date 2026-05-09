@@ -1,5 +1,5 @@
 {
-  "name": "@oceancommon/xbuild",
+  "name": "@msom/xbuild",
   "version": "1.0.0",
   "type": "module",
   "description": "High-performance build tool powered by Rolldown",
@@ -9,10 +9,11 @@
   },
   "scripts": {
     "build:cli": "rolldown -c rolldown.config.mjs && cp dist/cli.js bin/xbuild.js && chmod +x bin/xbuild.js",
-    "dev": "tsx src/cli.ts dev",
-    "build": "tsx src/cli.ts build",
-    "check": "tsx src/cli.ts check",
-    "compile": "tsx src/cli.ts compile"
+    "dev": "xbuild dev",
+    "build": "xbuild build",
+    "check": "xbuild check",
+    "compile": "xbuild compile",
+    "vite:build": "vite build"
   },
   "files": [
     "dist",
@@ -27,13 +28,16 @@
   "license": "ISC",
   "dependencies": {
     "rolldown": "^1.0.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@types/node": "^22.15.18",
-    "tsx": "^4.19.0"
+    "@types/node": "^22.19.18",
+    "tsx": "^4.21.0",
+    "vite": "^8.0.11",
+    "vite-plugin-dts": "^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "packageManager": "pnpm"
 }
